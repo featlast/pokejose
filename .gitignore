@@ -73,3 +73,9 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Documento de requisitos (confidencial, no se versiona)
+required.pdf
+
+# Archivos fuente del arte (Blender, scripts, tableros): solo locales
+/design/

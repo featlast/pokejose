@@ -9,9 +9,16 @@
 /* Begin PBXBuildFile section */
 		0C80B921A6F3F58F76C31292 /* libPods-pokeapi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-pokeapi.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		3622CBBDD241ACAD95C6AEBE /* KeyValueFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E85A6979394714BF48494E84 /* KeyValueFileStore.swift */; };
+		3AAAC171438B5E525FC78233 /* SafeAreaReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18386D39DA36C914E0408ECA /* SafeAreaReader.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		7976EE2AA5EE7EEEDE788087 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84957359804542E12CE7A3A8 /* SceneDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		84A0A848DEE34418748552D0 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		9B33C35E0B8AB44D4523600B /* RCTNativeSafeArea.mm in Sources */ = {isa = PBXBuildFile; fileRef = C1A41FFD883A2881945B16F5 /* RCTNativeSafeArea.mm */; };
+		D061C40B92148389A4B28D5C /* RCTNativeKeyValueStore.mm in Sources */ = {isa = PBXBuildFile; fileRef = 968E9DE01D0B23428E8B8D49 /* RCTNativeKeyValueStore.mm */; };
+		F1F43AEB0B30E291D2BAD89A /* Intro-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ED1245FA6BE2EA0D74B58F4B /* Intro-Bold.ttf */; };
+		F9C6498D2C701D46521A0466 /* Intro-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4D4189015D55A74FC5A200CA /* Intro-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,11 +26,21 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = pokeapi/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = pokeapi/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = pokeapi/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		18386D39DA36C914E0408ECA /* SafeAreaReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafeAreaReader.swift; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-pokeapi.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pokeapi.debug.xcconfig"; path = "Target Support Files/Pods-pokeapi/Pods-pokeapi.debug.xcconfig"; sourceTree = "<group>"; };
+		4B021464C0EDBBCA0A3D8A4D /* PokedexSwiftBridge.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = PokedexSwiftBridge.h; sourceTree = "<group>"; };
+		4D4189015D55A74FC5A200CA /* Intro-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Intro-Regular.ttf"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-pokeapi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pokeapi.release.xcconfig"; path = "Target Support Files/Pods-pokeapi/Pods-pokeapi.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-pokeapi.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-pokeapi.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		69D65EDF55F544DA2A27360E /* RCTNativeSafeArea.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = RCTNativeSafeArea.h; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = pokeapi/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = pokeapi/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		84957359804542E12CE7A3A8 /* SceneDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SceneDelegate.swift; path = pokeapi/SceneDelegate.swift; sourceTree = "<group>"; };
+		8546DEF3E6D26F9111D75D32 /* RCTNativeKeyValueStore.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = RCTNativeKeyValueStore.h; sourceTree = "<group>"; };
+		968E9DE01D0B23428E8B8D49 /* RCTNativeKeyValueStore.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = RCTNativeKeyValueStore.mm; sourceTree = "<group>"; };
+		C1A41FFD883A2881945B16F5 /* RCTNativeSafeArea.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = RCTNativeSafeArea.mm; sourceTree = "<group>"; };
+		E85A6979394714BF48494E84 /* KeyValueFileStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeyValueFileStore.swift; sourceTree = "<group>"; };
+		ED1245FA6BE2EA0D74B58F4B /* Intro-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; path = "Intro-Bold.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -47,6 +64,9 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				315C67DC61A0CBDEB5960F00 /* NativeModules */,
+				84957359804542E12CE7A3A8 /* SceneDelegate.swift */,
+				F8230778A4AFFD566B29F73B /* Fonts */,
 			);
 			name = pokeapi;
 			sourceTree = "<group>";
@@ -58,6 +78,21 @@
 				5DCACB8F33CDC322A6C60F78 /* libPods-pokeapi.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		315C67DC61A0CBDEB5960F00 /* NativeModules */ = {
+			isa = PBXGroup;
+			children = (
+				E85A6979394714BF48494E84 /* KeyValueFileStore.swift */,
+				18386D39DA36C914E0408ECA /* SafeAreaReader.swift */,
+				8546DEF3E6D26F9111D75D32 /* RCTNativeKeyValueStore.h */,
+				968E9DE01D0B23428E8B8D49 /* RCTNativeKeyValueStore.mm */,
+				69D65EDF55F544DA2A27360E /* RCTNativeSafeArea.h */,
+				C1A41FFD883A2881945B16F5 /* RCTNativeSafeArea.mm */,
+				4B021464C0EDBBCA0A3D8A4D /* PokedexSwiftBridge.h */,
+			);
+			name = NativeModules;
+			path = pokeapi/NativeModules;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -96,6 +131,16 @@
 				5709B34CF0A7D63546082F79 /* Pods-pokeapi.release.xcconfig */,
 			);
 			path = Pods;
+			sourceTree = "<group>";
+		};
+		F8230778A4AFFD566B29F73B /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				ED1245FA6BE2EA0D74B58F4B /* Intro-Bold.ttf */,
+				4D4189015D55A74FC5A200CA /* Intro-Regular.ttf */,
+			);
+			name = Fonts;
+			path = pokeapi/Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -161,6 +206,8 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				84A0A848DEE34418748552D0 /* PrivacyInfo.xcprivacy in Resources */,
+				F1F43AEB0B30E291D2BAD89A /* Intro-Bold.ttf in Resources */,
+				F9C6498D2C701D46521A0466 /* Intro-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,6 +294,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				3622CBBDD241ACAD95C6AEBE /* KeyValueFileStore.swift in Sources */,
+				3AAAC171438B5E525FC78233 /* SafeAreaReader.swift in Sources */,
+				D061C40B92148389A4B28D5C /* RCTNativeKeyValueStore.mm in Sources */,
+				9B33C35E0B8AB44D4523600B /* RCTNativeSafeArea.mm in Sources */,
+				7976EE2AA5EE7EEEDE788087 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

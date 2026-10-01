@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">pokeapi</string>
+    <!-- Short name under the launcher icon; the full "Pokédex de José" is shown in the app. -->
+    <string name="app_name">Pokédex</string>
 </resources>
