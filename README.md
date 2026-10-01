@@ -66,6 +66,9 @@ npm run ios            # o: yarn ios
 >   `yarn install` no tiene `yarn.lock` y resolvería las versiones de cero.
 > - Los TurboModules usan **codegen**: Gradle lo ejecuta automáticamente en Android y
 >   `pod install` lo hace en iOS. No hay pasos manuales adicionales.
+> - **Android 17:** al abrir el build de desarrollo, el sistema pide permiso para "dispositivos
+>   cercanos" (red local). Lo declara React Native solo en debug para conectar con Metro;
+>   acéptalo. El build release no incluye ese permiso.
 > - **Sin conexión:** el build de desarrollo depende de Metro, así que el modo avión lo
 >   desconecta. Para probar offline, usa el build release, que incluye el JS:
 >   `cd android && ./gradlew assembleRelease` e instala `app/build/outputs/apk/release/app-release.apk`.
