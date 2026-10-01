@@ -45,14 +45,18 @@ Guía oficial de entorno: https://reactnative.dev/docs/set-up-your-environment
 Con un emulador Android abierto (o un dispositivo conectado) y/o Xcode instalado:
 
 ```sh
-# 1. Dependencias JS: el repo fija versiones con package-lock.json (npm)
+# 1. Clonar el repositorio
+git clone https://github.com/featlast/pokejose.git
+cd pokejose
+
+# 2. Dependencias JS: el repo fija versiones con package-lock.json (npm)
 npm ci                 # reproducible; equivalente con Yarn: yarn install
 
-# 2. Solo iOS: la primera vez o si cambian dependencias nativas
+# 3. Solo iOS: la primera vez o si cambian dependencias nativas
 bundle install
 cd ios && bundle exec pod install && cd ..
 
-# 3. Compilar, instalar y abrir. Metro se levanta solo si no está corriendo.
+# 4. Compilar, instalar y abrir. Metro se levanta solo si no está corriendo.
 npm run android        # o: yarn android
 npm run ios            # o: yarn ios
 ```
