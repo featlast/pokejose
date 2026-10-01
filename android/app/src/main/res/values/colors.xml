@@ -1,0 +1,4 @@
+<resources>
+    <!-- Dominant tone of the splash backdrop rendered in Blender; AnimatedSplash.tsx starts on it. -->
+    <color name="splash_background">#100B1E</color>
+</resources>
