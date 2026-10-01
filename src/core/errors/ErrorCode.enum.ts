@@ -1,0 +1,9 @@
+export enum ErrorCode {
+  NETWORK = 'NETWORK',
+  TIMEOUT = 'TIMEOUT',
+  NOT_FOUND = 'NOT_FOUND',
+  SERVER = 'SERVER',
+  PARSE = 'PARSE',
+  STORAGE = 'STORAGE',
+  UNKNOWN = 'UNKNOWN',
+}
