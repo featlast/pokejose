@@ -1,4 +1,5 @@
 import { SearchStatus } from '../../enums/SearchStatus.enum';
+import type { PokemonType } from '../../../domain/enums';
 import type {
   PokemonSearchAction,
   PokemonSearchState,
@@ -7,9 +8,16 @@ import type {
 export const initialPokemonSearchState: PokemonSearchState = {
   status: SearchStatus.IDLE,
   term: '',
+  typeFilter: null,
   results: [],
   error: null,
 };
+
+/** True when an answer belongs to criteria the user has already moved past. */
+const isStale = (
+  state: PokemonSearchState,
+  action: { term: string; typeFilter: PokemonType | null },
+) => action.term !== state.term || action.typeFilter !== state.typeFilter;
 
 export const pokemonSearchReducer = (
   state: PokemonSearchState,
@@ -20,10 +28,15 @@ export const pokemonSearchReducer = (
       return initialPokemonSearchState;
     case 'SEARCH_START':
       // Previous results stay visible while the next ones are computed.
-      return { ...state, status: SearchStatus.SEARCHING, term: action.term };
+      return {
+        ...state,
+        status: SearchStatus.SEARCHING,
+        term: action.term,
+        typeFilter: action.typeFilter,
+      };
     case 'SEARCH_SUCCESS':
-      // Ignore answers for a term the user has already moved past.
-      if (action.term !== state.term) {
+      // Ignore answers for a term or type the user has already moved past.
+      if (isStale(state, action)) {
         return state;
       }
       return {
@@ -36,7 +49,7 @@ export const pokemonSearchReducer = (
         error: null,
       };
     case 'SEARCH_FAILURE':
-      if (action.term !== state.term) {
+      if (isStale(state, action)) {
         return state;
       }
       return {

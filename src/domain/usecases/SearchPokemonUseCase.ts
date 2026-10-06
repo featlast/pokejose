@@ -1,5 +1,7 @@
-import type { PokemonSummary } from '../models';
+import type { PokemonType } from '../enums';
+import type { PokemonSummary, PokemonTypeIndex } from '../models';
 import type { PokemonSearchIndexRepository } from '../repositories/PokemonSearchIndexRepository.interface';
+import type { PokemonTypeIndexRepository } from '../repositories/PokemonTypeIndexRepository.interface';
 
 /** Spanish accents are enough here; avoids relying on `String.prototype.normalize`. */
 const ACCENTS: Record<string, string> = {
@@ -54,14 +56,38 @@ export const searchPokemon = (
   return [...startsWith, ...contains];
 };
 
-export class SearchPokemonUseCase {
-  constructor(private readonly repository: PokemonSearchIndexRepository) {}
+/** Pokémon that have `type` in any slot (Charizard is both Fire and Flying), in index order. */
+export const filterByType = (
+  index: readonly PokemonSummary[],
+  typeIndex: PokemonTypeIndex,
+  type: PokemonType,
+): PokemonSummary[] =>
+  index.filter(pokemon => typeIndex[pokemon.id]?.includes(type) ?? false);
 
-  async execute(query: string): Promise<PokemonSummary[]> {
-    if (!query.trim()) {
+/**
+ * Search by text, by type or both. A type alone lists every Pokémon of that
+ * type; a text alone searches the whole index; neither returns nothing.
+ */
+export class SearchPokemonUseCase {
+  constructor(
+    private readonly searchIndex: PokemonSearchIndexRepository,
+    private readonly typeIndex: PokemonTypeIndexRepository,
+  ) {}
+
+  async execute(
+    query: string,
+    type: PokemonType | null = null,
+  ): Promise<PokemonSummary[]> {
+    const hasQuery = query.trim().length > 0;
+    if (!hasQuery && !type) {
       return [];
     }
-    const { data } = await this.repository.getSearchIndex();
-    return searchPokemon(data, query);
+    const [{ data: index }, typeIndex] = await Promise.all([
+      this.searchIndex.getSearchIndex(),
+      type ? this.typeIndex.getTypeIndex() : Promise.resolve(null),
+    ]);
+    const candidates =
+      type && typeIndex ? filterByType(index, typeIndex.data, type) : index;
+    return hasQuery ? searchPokemon(candidates, query) : candidates;
   }
 }

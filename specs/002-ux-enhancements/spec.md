@@ -59,8 +59,8 @@
 
 ## Fuera de alcance (esta iteración)
 
-- **Filtros por tipo.** Se pospusieron por decisión del usuario. El índice de tipos de FR-207 queda
-  listo para habilitarlos después sin nuevas peticiones.
+- **Filtros por tipo.** Se pospusieron por decisión del usuario. *Habilitados después en la spec 003*
+  sobre el índice de tipos de FR-207, sin peticiones nuevas.
 - Favoritos, evoluciones, búsqueda por habilidad o por tipo.
 - Nombres de Pokémon traducidos (la API los da en inglés en el índice).
 

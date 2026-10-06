@@ -29,6 +29,8 @@ import {
   SearchBar,
   StateMessage,
   ThemeToggle,
+  TYPE_FILTER_ROW_HEIGHT,
+  TypeFilterBar,
 } from '../../components';
 import { POKEMON_CARD_HEIGHT_RATIO } from '../../components/PokemonCard';
 import { SearchStatus } from '../../enums/SearchStatus.enum';
@@ -49,11 +51,16 @@ import { useScrollToTop } from '../../hooks/useScrollToTop';
 import { useSkeletonCount } from '../../hooks/useSkeletonCount';
 import { useSharedElementVisibleTop } from '../../sharedElement/SharedElementContext';
 import type { ScreenProps } from '../../navigation';
-import { MIN_TOUCH_TARGET, spacing, useTheme } from '../../theme';
+import {
+  MIN_TOUCH_TARGET,
+  TYPE_APPEARANCE,
+  spacing,
+  useTheme,
+} from '../../theme';
 import { usePokemonListViewModel } from './usePokemonListViewModel';
 import { usePokemonSearch } from './usePokemonSearch';
 import { usePokemonTypeIndex } from './usePokemonTypeIndex';
-import { noResultsMessage } from './searchMessages';
+import { noResultsMessage, resultsSubtitle } from './searchMessages';
 
 const isIOS = Platform.OS === 'ios';
 const keyExtractor = (item: PokemonSummary) => String(item.id);
@@ -134,7 +141,11 @@ export const PokemonListScreen = ({
   }, [refresh]);
   const search = usePokemonSearch(searchPokemon);
   const { columns, itemWidth } = useGridLayout();
-  const { expandedHeight, collapseDistance } = useCollapsingHeaderLayout();
+  // FR-307: without the type index there is nothing to filter, so no row.
+  const showTypeFilters = typeIndex !== null;
+  const { expandedHeight, collapseDistance } = useCollapsingHeaderLayout(
+    showTypeFilters ? TYPE_FILTER_ROW_HEIGHT : 0,
+  );
 
   const collapsedHeight = expandedHeight - collapseDistance;
   // Cards above the compact header's bottom may be under the header: never fly back there.
@@ -181,6 +192,12 @@ export const PokemonListScreen = ({
     resetSearchScroll,
     searchCollapse,
   ]);
+
+  // Another type is another list: its results start from the top.
+  const { listRef: searchListRef } = searchTop;
+  useEffect(() => {
+    searchListRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [search.typeFilter, searchListRef]);
 
   // A new column count remounts the grid at its top; the header must follow.
   const { reset: resetPagedScroll } = pagedScroll;
@@ -252,9 +269,16 @@ export const PokemonListScreen = ({
     [contentStyleFor, searchScroll.contentPaddingTop],
   );
 
+  const resultsTypeLabel = search.state.typeFilter
+    ? TYPE_APPEARANCE[search.state.typeFilter].label
+    : undefined;
   const subtitle = isSearching
     ? search.state.status === SearchStatus.RESULTS
-      ? `${search.state.results.length} resultados`
+      ? resultsSubtitle(
+          search.state.results.length,
+          search.state.term,
+          resultsTypeLabel,
+        )
       : undefined
     : state.totalCount > 0
     ? `${state.items.length} de ${state.totalCount} Pokémon`
@@ -398,7 +422,7 @@ export const PokemonListScreen = ({
         <StateMessage
           testID="search-empty"
           title="Sin resultados"
-          message={noResultsMessage(term, state.totalCount)}
+          message={noResultsMessage(term, state.totalCount, resultsTypeLabel)}
         />,
         collapsedHeight,
       );
@@ -484,6 +508,15 @@ export const PokemonListScreen = ({
             </>
           ) : null
         }
+        belowSearch={
+          showTypeFilters ? (
+            <TypeFilterBar
+              selected={search.typeFilter}
+              onChange={search.setTypeFilter}
+            />
+          ) : undefined
+        }
+        belowSearchHeight={TYPE_FILTER_ROW_HEIGHT}
         renderSearch={progress => (
           <SearchBar
             value={search.query}

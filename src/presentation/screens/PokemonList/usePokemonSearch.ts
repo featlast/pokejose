@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { toUserFacingError } from '../../../core/errors';
+import type { PokemonType } from '../../../domain/enums';
 import type { SearchPokemonUseCase } from '../../../domain/usecases/SearchPokemonUseCase';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
@@ -9,9 +10,13 @@ import {
 
 export const SEARCH_DEBOUNCE_MS = 250;
 
-/** View model for the search bar: raw input, debounced term and results. */
+/**
+ * View model for the search bar and the type filter: raw input, debounced term,
+ * selected type and results. The type applies at once; only typing is debounced.
+ */
 export const usePokemonSearch = (searchPokemon: SearchPokemonUseCase) => {
   const [query, setQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<PokemonType | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [state, dispatch] = useReducer(
     pokemonSearchReducer,
@@ -20,17 +25,18 @@ export const usePokemonSearch = (searchPokemon: SearchPokemonUseCase) => {
   const term = useDebouncedValue(query.trim(), SEARCH_DEBOUNCE_MS);
 
   useEffect(() => {
-    if (!term) {
+    if (!term && !typeFilter) {
       dispatch({ type: 'CLEAR' });
       return;
     }
     let active = true;
-    dispatch({ type: 'SEARCH_START', term });
+    dispatch({ type: 'SEARCH_START', term, typeFilter });
     searchPokemon
-      .execute(term)
+      .execute(term, typeFilter)
       .then(
         results =>
-          active && dispatch({ type: 'SEARCH_SUCCESS', term, results }),
+          active &&
+          dispatch({ type: 'SEARCH_SUCCESS', term, typeFilter, results }),
       )
       .catch(
         error =>
@@ -38,19 +44,23 @@ export const usePokemonSearch = (searchPokemon: SearchPokemonUseCase) => {
           dispatch({
             type: 'SEARCH_FAILURE',
             term,
+            typeFilter,
             error: toUserFacingError(error),
           }),
       );
     return () => {
       active = false;
     };
-  }, [term, attempt, searchPokemon]);
+  }, [term, typeFilter, attempt, searchPokemon]);
 
   // Clearing is immediate: the list comes back without waiting for the debounce.
+  // The type filter stays (FR-304): only the text is cleared.
   const clear = useCallback(() => {
     setQuery('');
-    dispatch({ type: 'CLEAR' });
-  }, []);
+    if (!typeFilter) {
+      dispatch({ type: 'CLEAR' });
+    }
+  }, [typeFilter]);
   const retry = useCallback(() => setAttempt(value => value + 1), []);
 
   return {
@@ -58,8 +68,10 @@ export const usePokemonSearch = (searchPokemon: SearchPokemonUseCase) => {
     setQuery,
     clear,
     retry,
-    /** True as soon as the user types, before the debounce settles. */
-    isActive: query.trim().length > 0,
+    typeFilter,
+    setTypeFilter,
+    /** True as soon as the user types or picks a type, before the debounce settles. */
+    isActive: query.trim().length > 0 || typeFilter !== null,
     state,
   };
 };

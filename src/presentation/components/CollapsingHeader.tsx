@@ -18,6 +18,13 @@ type CollapsingHeaderProps = {
   trailing?: ReactNode;
   /** Rendered right below the header (e.g. offline banners); moves with it. */
   bottomAccessory?: ReactNode;
+  /**
+   * Row under the search bar, on the app background (e.g. type filters). It is
+   * part of the header: it moves with it and stays pinned once collapsed (ADR-16).
+   * `expandedHeight` must already include `belowSearchHeight`.
+   */
+  belowSearch?: ReactNode;
+  belowSearchHeight?: number;
 };
 
 export const HEADER_ICON_SIZE = 36;
@@ -43,6 +50,8 @@ export const CollapsingHeader = ({
   renderSearch,
   trailing,
   bottomAccessory,
+  belowSearch,
+  belowSearchHeight = 0,
 }: CollapsingHeaderProps) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -101,52 +110,60 @@ export const CollapsingHeader = ({
         testID="collapsing-header"
         style={[
           styles.header,
-          {
-            height: expandedHeight,
-            backgroundColor: colors.primary,
-            paddingTop: insets.top + spacing.sm,
-            transform: [{ translateY }],
-          },
-          horizontal,
+          { height: expandedHeight, transform: [{ translateY }] },
         ]}
       >
-        <Animated.View
+        <View
           style={[
-            styles.titleBlock,
-            { opacity: titleOpacity, transform: [{ scale: titleScale }] },
+            styles.bar,
+            {
+              backgroundColor: colors.primary,
+              paddingTop: insets.top + spacing.sm,
+            },
+            horizontal,
           ]}
         >
-          <AppText
-            variant="title"
-            color={ON_HEADER}
-            accessibilityRole="header"
-            numberOfLines={1}
-          >
-            {title}
-          </AppText>
-          {subtitle ? (
-            <AppText variant="label" color={ON_HEADER} numberOfLines={1}>
-              {subtitle}
-            </AppText>
-          ) : null}
-        </Animated.View>
-        <View style={styles.searchRow}>
           <Animated.View
-            pointerEvents="none"
             style={[
-              styles.icon,
-              { opacity: iconOpacity, transform: [{ scale: iconScale }] },
+              styles.titleBlock,
+              { opacity: titleOpacity, transform: [{ scale: titleScale }] },
             ]}
           >
-            <Image
-              source={appIcon}
-              style={styles.iconImage}
-              accessibilityIgnoresInvertColors
-            />
+            <AppText
+              variant="title"
+              color={ON_HEADER}
+              accessibilityRole="header"
+              numberOfLines={1}
+            >
+              {title}
+            </AppText>
+            {subtitle ? (
+              <AppText variant="label" color={ON_HEADER} numberOfLines={1}>
+                {subtitle}
+              </AppText>
+            ) : null}
           </Animated.View>
-          {renderSearch(progress)}
-          {trailing}
+          <View style={styles.searchRow}>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.icon,
+                { opacity: iconOpacity, transform: [{ scale: iconScale }] },
+              ]}
+            >
+              <Image
+                source={appIcon}
+                style={styles.iconImage}
+                accessibilityIgnoresInvertColors
+              />
+            </Animated.View>
+            {renderSearch(progress)}
+            {trailing}
+          </View>
         </View>
+        {belowSearch ? (
+          <View style={{ height: belowSearchHeight }}>{belowSearch}</View>
+        ) : null}
         {bottomAccessory ? (
           <View
             pointerEvents="none"
@@ -175,9 +192,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: spacing.md,
   },
+  bar: { flex: 1, justifyContent: 'flex-end', paddingBottom: spacing.md },
   titleBlock: {
     height: TITLE_BLOCK_HEIGHT,
     justifyContent: 'center',

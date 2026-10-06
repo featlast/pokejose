@@ -339,6 +339,79 @@ describe('App', () => {
     expect(byTestId(renderer, 'pokemon-list')).not.toHaveLength(0);
   });
 
+  describe('type filters', () => {
+    const typeIndexRepository: PokemonTypeIndexRepository = {
+      getTypeIndex: jest.fn().mockResolvedValue(
+        resource({
+          1: [PokemonType.GRASS, PokemonType.POISON],
+          4: [PokemonType.FIRE],
+          25: [PokemonType.ELECTRIC],
+        }),
+      ),
+    };
+
+    it('lists every Pokémon of the tapped type and goes back to the list when tapped again', async () => {
+      const renderer = (mounted = await renderApp(createRepository(), {
+        typeIndexRepository,
+      }));
+
+      await press(byTestId(renderer, 'type-filter-poison')[0]);
+
+      expect(byTestId(renderer, 'search-results')).not.toHaveLength(0);
+      // Bulbasaur is Grass first: secondary types count too (FR-302).
+      expect(byTestId(renderer, 'pokemon-card-1')).not.toHaveLength(0);
+      expect(visibleText(renderer)).toContain('1 Pokémon de tipo Veneno');
+      expect(
+        byTestId(renderer, 'type-filter-poison')[0].props.accessibilityState,
+      ).toEqual({ selected: true });
+
+      await press(byTestId(renderer, 'type-filter-poison')[0]);
+
+      expect(byTestId(renderer, 'search-results')).toHaveLength(0);
+      expect(byTestId(renderer, 'pokemon-list')).not.toHaveLength(0);
+      expect(
+        byTestId(renderer, 'type-filter-all')[0].props.accessibilityState,
+      ).toEqual({ selected: true });
+    });
+
+    it('combines the type with the search and keeps it when the search is cleared', async () => {
+      const renderer = (mounted = await renderApp(createRepository(), {
+        typeIndexRepository,
+      }));
+
+      await press(byTestId(renderer, 'type-filter-fire')[0]);
+      await typeAndWaitForSearch(renderer, 'pika');
+
+      expect(byTestId(renderer, 'search-empty')).not.toHaveLength(0);
+      expect(visibleText(renderer)).toContain(
+        'No encontramos Pokémon de tipo Fuego para “pika”.',
+      );
+
+      await press(byTestId(renderer, 'search-clear')[0]);
+      await ReactTestRenderer.act(
+        () => new Promise<void>(resolve => setTimeout(resolve, 300)),
+      );
+
+      expect(byTestId(renderer, 'pokemon-card-4')).not.toHaveLength(0);
+      expect(visibleText(renderer)).toContain('1 Pokémon de tipo Fuego');
+    });
+
+    it('hides the row while the type index is unavailable', async () => {
+      const renderer = (mounted = await renderApp(createRepository(), {
+        typeIndexRepository: {
+          getTypeIndex: jest
+            .fn()
+            .mockRejectedValue(
+              new AppError(ErrorCode.NETWORK, 'Network request failed'),
+            ),
+        },
+      }));
+
+      expect(byTestId(renderer, 'pokemon-list')).not.toHaveLength(0);
+      expect(byTestId(renderer, 'type-filter-bar')).toHaveLength(0);
+    });
+  });
+
   it('shows an empty state when nothing matches the search', async () => {
     const renderer = (mounted = await renderApp(createRepository()));
 

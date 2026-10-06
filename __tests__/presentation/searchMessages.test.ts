@@ -1,4 +1,7 @@
-import { noResultsMessage } from '../../src/presentation/screens/PokemonList/searchMessages';
+import {
+  noResultsMessage,
+  resultsSubtitle,
+} from '../../src/presentation/screens/PokemonList/searchMessages';
 
 describe('noResultsMessage', () => {
   it('says where the Pokédex ends for a number past it', () => {
@@ -19,6 +22,25 @@ describe('noResultsMessage', () => {
     );
     expect(noResultsMessage('1351', 0)).toBe(
       'No encontramos Pokémon para “1351”.',
+    );
+  });
+
+  it('names the type filter, with or without a term', () => {
+    expect(noResultsMessage('zzz', 1025, 'Fuego')).toBe(
+      'No encontramos Pokémon de tipo Fuego para “zzz”.',
+    );
+    expect(noResultsMessage('', 1025, 'Fuego')).toBe(
+      'No encontramos Pokémon de tipo Fuego.',
+    );
+  });
+});
+
+describe('resultsSubtitle', () => {
+  it('counts search results, type results or both', () => {
+    expect(resultsSubtitle(3, 'pika')).toBe('3 resultados');
+    expect(resultsSubtitle(12, '', 'Fuego')).toBe('12 Pokémon de tipo Fuego');
+    expect(resultsSubtitle(2, 'char', 'Fuego')).toBe(
+      '2 resultados de tipo Fuego',
     );
   });
 });

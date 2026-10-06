@@ -107,6 +107,9 @@ export const createAppDependencies = (
     ),
     getPokemonDetail: new GetPokemonDetailUseCase(repository),
     getTypeIndex: new GetPokemonTypeIndexUseCase(typeIndexRepository),
-    searchPokemon: new SearchPokemonUseCase(searchIndexRepository),
+    searchPokemon: new SearchPokemonUseCase(
+      searchIndexRepository,
+      typeIndexRepository,
+    ),
   };
 };

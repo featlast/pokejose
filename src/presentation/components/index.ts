@@ -26,4 +26,9 @@ export { StatBar } from './StatBar';
 export { StateMessage } from './StateMessage';
 export { ThemeToggle } from './ThemeToggle';
 export { TypeBadge } from './TypeBadge';
+export {
+  FILTERABLE_TYPES,
+  TYPE_FILTER_ROW_HEIGHT,
+  TypeFilterBar,
+} from './TypeFilterBar';
 export { TypeRibbon } from './TypeRibbon';

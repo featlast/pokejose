@@ -7,15 +7,19 @@ import { useSafeAreaInsets } from './SafeArea';
 export const TITLE_BLOCK_HEIGHT = 64;
 const SEARCH_ROW_HEIGHT = 44;
 
-/** Geometry of the list screen's collapsing header for the current safe area. */
-export const useCollapsingHeaderLayout = () => {
+/**
+ * Geometry of the list screen's collapsing header for the current safe area.
+ * `extraHeight` is a row under the search bar that stays pinned with it (ADR-16).
+ */
+export const useCollapsingHeaderLayout = (extraHeight = 0) => {
   const insets = useSafeAreaInsets();
   const expandedHeight =
     insets.top +
     spacing.sm +
     TITLE_BLOCK_HEIGHT +
     SEARCH_ROW_HEIGHT +
-    spacing.md;
+    spacing.md +
+    extraHeight;
   return {
     expandedHeight,
     collapseDistance: TITLE_BLOCK_HEIGHT,
