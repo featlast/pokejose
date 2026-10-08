@@ -1,15 +1,15 @@
 # Pokédex de José — React Native
 
 Aplicación móvil (Android / iOS) que consume [PokéAPI](https://pokeapi.co/). Muestra los
-primeros 20 Pokémon con paginación incremental, un detalle completo y persistencia local
-con soporte offline parcial.
+primeros 20 Pokémon con paginación incremental, búsqueda, filtros por tipo y favoritos, un detalle
+completo (cadena evolutiva, debilidades y resistencias) y persistencia local con soporte offline parcial.
 
 **Sin librerías externas:** `dependencies` contiene solo `react` y `react-native`. Lo que la
 plataforma no trae (almacenamiento persistente, safe area y navegación) se construyó con la
 infraestructura de React Native: TurboModules propios en **Kotlin** y **Swift**, y un stack
 navigator propio en TypeScript.
 
-| Listado (iOS) | Detalle (Android) | Offline: detalle cacheado | Offline: sin caché |
+| Listado con filtros y favoritos (iOS) | Detalle con evoluciones (Android) | Offline: detalle cacheado | Offline: sin caché |
 |---|---|---|---|
 | <img src="docs/screenshots/ios-list.png" width="200"/> | <img src="docs/screenshots/android-detail.png" width="200"/> | <img src="docs/screenshots/android-offline-detail.png" width="200"/> | <img src="docs/screenshots/android-offline-error.png" width="200"/> |
 
@@ -76,8 +76,8 @@ npm run ios            # o: yarn ios
 ## 3. Pruebas y calidad
 
 ```sh
-npm test               # 177 pruebas: unitarias, de componentes e integración
-npm run test:coverage  # cobertura (~92 % de líneas)
+npm test               # 236 pruebas: unitarias, de componentes e integración
+npm run test:coverage  # cobertura (~94 % de líneas)
 npm run typecheck      # tsc --noEmit (strict)
 npm run lint           # ESLint (@react-native)
 npm run format:check   # Prettier
@@ -96,7 +96,11 @@ El proyecto se construyó con **SDD**. Los artefactos viven en el repositorio y 
 | [`specs/001-pokedex/spec.md`](specs/001-pokedex/spec.md) | Requisitos del PDF con ID (`FR`, `BR`, `NFR`) y criterio de aceptación |
 | [`specs/001-pokedex/plan.md`](specs/001-pokedex/plan.md) | Arquitectura y **decisiones técnicas (ADR-01…08)** |
 | [`specs/001-pokedex/tasks.md`](specs/001-pokedex/tasks.md) | Tareas trazables a requisitos |
-| [`specs/002-ux-enhancements/`](specs/002-ux-enhancements/spec.md) | Mejoras fuera del PDF (búsqueda, tema, cinta de tipo…) con su plan (ADR-10…15) y tareas |
+| [`specs/002-ux-enhancements/`](specs/002-ux-enhancements/spec.md) | Mejoras fuera del PDF (búsqueda, tema, cinta de tipo…) con su plan (ADR-10…17) y tareas |
+| [`specs/003-type-filters/`](specs/003-type-filters/spec.md) | Filtros circulares por tipo bajo la búsqueda y header del color del tipo |
+| [`specs/004-type-matchups/`](specs/004-type-matchups/spec.md) | Debilidades y resistencias en el detalle (ADR-18) |
+| [`specs/005-evolution-chain/`](specs/005-evolution-chain/spec.md) | Cadena evolutiva lineal y con ramas, navegable (ADR-19…22) |
+| [`specs/006-favorites/`](specs/006-favorites/spec.md) | Favoritos persistentes con filtro, animación y deshacer (ADR-24…26) |
 | [`AGENTS.md`](AGENTS.md) | Patrón agéntico **Orchestrator–Workers + Evaluator–Optimizer** y compuertas de calidad |
 
 ## 5. Arquitectura
@@ -175,6 +179,10 @@ src/
 | **iOS: `SceneDelegate`** | iOS 27 exige el ciclo de vida UIScene; el template original fallaba al iniciar |
 | **Tipos en el listado vía índice de tipos** (spec 002) | `/type/{tipo}` una vez (~21 KB × 18, cacheado 7 días) en vez del detalle por tarjeta (~279 KB c/u) |
 | **Búsqueda local** (spec 002) | PokéAPI no tiene búsqueda: se descarga y cachea el índice de nombres (~1350) y se filtra en memoria; funciona offline |
+| **Filtros como criterio de búsqueda** (specs 003 y 006) | Tipo y favoritos son criterios más de `SearchPokemonUseCase`, en el dominio; la UI no filtra listas. Filtrar por tipo reutiliza el índice de tipos, sin peticiones nuevas |
+| **Debilidades desde la API** (spec 004, ADR-18) | Se usan las `damage_relations` de las mismas 18 respuestas de `/type/{tipo}` del índice, en vez de una tabla escrita a mano. El cálculo de doble tipo es una función pura del dominio |
+| **Cadena evolutiva guardada bajo cada miembro** (spec 005, ADR-19) | La respuesta es de toda la cadena: se cachea 7 días una entrada por especie, así abrir Charizard después de Charmander no hace peticiones |
+| **Favoritos fuera del caché** (spec 006, ADR-24/25) | Se guardan en `NativeKeyValueStore` con versión propia y sin TTL, así un cambio de esquema del caché no los borra. El repositorio mantiene la lista en memoria y persiste en segundo plano |
 | **Tema: siempre arranca en Sistema** (spec 002, FR-210) | La elección Claro/Oscuro dura la sesión y no se guarda; `Appearance.setColorScheme` para lo nativo. Iconos propios derivados de la esfera Lumen (PNG monocromos + `tintColor`, sin SVG) |
 | **Shared transition propia** (spec 002) | Registro de elementos + clon en overlay animado en el driver nativo; fundido cruzado sincronizado; respaldo si la tarjeta no es visible. Se evaluó hacerla nativa en Kotlin/Swift y se descartó (ADR-14) |
 | **Header colapsable en el driver nativo** (spec 002) | Solo `transform`/`opacity`. El espacio del header se reserva con `paddingTop` en ambas plataformas: en iOS, `contentInset` se descartó porque `UIRefreshControl` lo reescribe al refrescar |
@@ -196,6 +204,13 @@ src/
 - **Búsqueda** por nombre o número (`25`, `#025`), sin distinguir mayúsculas ni acentos, con
   *debounce* y funcionamiento offline.
 - **Cinta diagonal de tipo** en cada tarjeta, con el color del tipo principal.
+- **Filtros por tipo:** fila de círculos bajo la búsqueda (Todos, Favoritos y los 18 tipos). Filtra
+  toda la Pokédex por cualquiera de los tipos, se combina con la búsqueda y tiñe el header del color del tipo.
+- **Favoritos:** corazón-Pokéball en cada tarjeta y en el detalle, con animación de captura y aviso
+  con **Deshacer**. El filtro Favoritos muestra los más recientes primero y funciona offline.
+- **Cadena evolutiva** en el detalle: lineal o con ramas (Eevee), con condiciones legibles
+  (nivel, piedras, amistad, intercambio…). Tocar un miembro abre su detalle.
+- **Debilidades y resistencias** del Pokémon (×4, ×2, ×½, ×¼, ×0), calculadas con sus dos tipos.
 - **Header colapsable:** al hacer scroll, el título se achica y aparecen el ícono de la app, la barra
   de búsqueda fija y el selector de tema.
 - **Modo oscuro** con selector **Sistema / Claro / Oscuro** e iconos propios. La app arranca siempre en **Sistema**.
@@ -227,5 +242,5 @@ Se **eliminaron** del template `react-native-safe-area-context` y `@react-native
 - Sin pruebas E2E (Detox/Maestro son dependencias externas). El flujo offline se verificó
   manualmente en Android (build release en modo avión); ver capturas.
 - Nombres de habilidades en inglés (traducirlos requiere una llamada extra por habilidad).
-- Filtros por tipo: pospuestos. El índice de tipos ya está listo para habilitarlos sin peticiones nuevas.
-- Favoritos fuera de alcance.
+- Cadena evolutiva sin megaevoluciones ni formas regionales: la API no las incluye en `evolution-chain`.
+- Los favoritos son locales al dispositivo (sin sincronización entre dispositivos).
