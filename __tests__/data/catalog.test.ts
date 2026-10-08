@@ -7,7 +7,10 @@ import { PokeApiCatalogRemoteDataSource } from '../../src/data/datasources/remot
 import type { SearchIndexRemoteDataSource } from '../../src/data/datasources/remote/SearchIndexRemoteDataSource.interface';
 import type { TypeIndexRemoteDataSource } from '../../src/data/datasources/remote/TypeIndexRemoteDataSource.interface';
 import type { TypeResponseDto } from '../../src/data/dto/PokeApi.dto';
-import { mapTypeResponsesToIndex } from '../../src/data/mappers/typeIndex.mapper';
+import {
+  mapTypeResponsesToChart,
+  mapTypeResponsesToIndex,
+} from '../../src/data/mappers/typeIndex.mapper';
 import { PokemonSearchIndexRepositoryImpl } from '../../src/data/repositories/PokemonSearchIndexRepositoryImpl';
 import { PokemonTypeIndexRepositoryImpl } from '../../src/data/repositories/PokemonTypeIndexRepositoryImpl';
 import { DataOrigin, PokemonType } from '../../src/domain/enums';
@@ -56,6 +59,38 @@ const httpReturning = (
   get: jest.fn(handler) as HttpClient['get'],
 });
 
+const relation = (...names: string[]) =>
+  names.map(name => ({ name, url: `https://pokeapi.co/api/v2/type/${name}/` }));
+
+describe('mapTypeResponsesToChart', () => {
+  it('reads the defensive multipliers of each type', () => {
+    const chart = mapTypeResponsesToChart([
+      {
+        ...typeDto('ghost', []),
+        damage_relations: {
+          double_damage_from: relation('ghost', 'dark'),
+          half_damage_from: relation('poison', 'bug'),
+          no_damage_from: relation('normal', 'fighting', 'shadow'),
+        },
+      },
+    ]);
+    expect(chart).toEqual({
+      [PokemonType.GHOST]: {
+        [PokemonType.GHOST]: 2,
+        [PokemonType.DARK]: 2,
+        [PokemonType.POISON]: 0.5,
+        [PokemonType.BUG]: 0.5,
+        [PokemonType.NORMAL]: 0,
+        [PokemonType.FIGHTING]: 0,
+      },
+    });
+  });
+
+  it('leaves out types whose request failed or that are unknown', () => {
+    expect(mapTypeResponsesToChart([typeDto('shadow', [])])).toEqual({});
+  });
+});
+
 describe('PokeApiCatalogRemoteDataSource.fetchTypeIndex', () => {
   const options = { searchIndexLimit: 100_000 };
 
@@ -70,10 +105,11 @@ describe('PokeApiCatalogRemoteDataSource.fetchTypeIndex', () => {
 
     expect(http.get).toHaveBeenCalledTimes(18);
     expect(http.get).not.toHaveBeenCalledWith('type/unknown');
-    expect(snapshot).toEqual({
+    expect(snapshot).toMatchObject({
       index: { 4: [PokemonType.FIRE] },
       isComplete: true,
     });
+    expect(Object.keys(snapshot.chart)).toHaveLength(18);
   });
 
   it('returns a partial index when some types fail', async () => {
@@ -118,6 +154,7 @@ describe('PokemonTypeIndexRepositoryImpl', () => {
     const remote = createRemote();
     remote.fetchTypeIndex.mockResolvedValue({
       index: { 4: [PokemonType.FIRE] },
+      chart: {},
       isComplete: true,
     });
     const repository = new PokemonTypeIndexRepositoryImpl(
@@ -135,9 +172,33 @@ describe('PokemonTypeIndexRepositoryImpl', () => {
     expect(remote.fetchTypeIndex).toHaveBeenCalledTimes(1);
   });
 
+  it('serves the type chart from the same cached snapshot', async () => {
+    const remote = createRemote();
+    const chart = { [PokemonType.GHOST]: { [PokemonType.NORMAL]: 0 } };
+    remote.fetchTypeIndex.mockResolvedValue({
+      index: {},
+      chart,
+      isComplete: true,
+    });
+    const repository = new PokemonTypeIndexRepositoryImpl(
+      remote,
+      createLocal(),
+    );
+
+    await repository.getTypeIndex();
+    const result = await repository.getTypeChart();
+
+    expect(result).toEqual({ data: chart, origin: DataOrigin.CACHE });
+    expect(remote.fetchTypeIndex).toHaveBeenCalledTimes(1);
+  });
+
   it('uses but does not persist a partial index, so it is retried', async () => {
     const remote = createRemote();
-    remote.fetchTypeIndex.mockResolvedValue({ index: {}, isComplete: false });
+    remote.fetchTypeIndex.mockResolvedValue({
+      index: {},
+      chart: {},
+      isComplete: false,
+    });
     const repository = new PokemonTypeIndexRepositoryImpl(
       remote,
       createLocal(),

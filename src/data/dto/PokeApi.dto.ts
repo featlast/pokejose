@@ -53,6 +53,7 @@ export interface PokemonDetailResponseDto {
   abilities: PokemonAbilitySlotDto[];
   stats: PokemonStatDto[];
   sprites: PokemonSpritesDto;
+  species?: NamedApiResourceDto;
 }
 
 export interface TypePokemonSlotDto {
@@ -61,7 +62,46 @@ export interface TypePokemonSlotDto {
   pokemon: NamedApiResourceDto;
 }
 
+/** Defensive side of a type: who hits it for ×2, ×½ and ×0. */
+export interface TypeDamageRelationsDto {
+  double_damage_from: NamedApiResourceDto[];
+  half_damage_from: NamedApiResourceDto[];
+  no_damage_from: NamedApiResourceDto[];
+}
+
 export interface TypeResponseDto {
   name: string;
   pokemon: TypePokemonSlotDto[];
+  damage_relations?: TypeDamageRelationsDto;
+}
+
+export interface PokemonSpeciesResponseDto {
+  id: number;
+  evolution_chain: { url: string } | null;
+}
+
+export interface EvolutionDetailDto {
+  trigger: NamedApiResourceDto | null;
+  min_level: number | null;
+  item: NamedApiResourceDto | null;
+  held_item: NamedApiResourceDto | null;
+  min_happiness: number | null;
+  min_affection: number | null;
+  time_of_day: string;
+  known_move_type: NamedApiResourceDto | null;
+  /** 1 = female, 2 = male. */
+  gender: number | null;
+  /** Marks the condition to show when it changed across games. */
+  is_default?: boolean;
+}
+
+export interface ChainLinkDto {
+  species: NamedApiResourceDto;
+  evolution_details: EvolutionDetailDto[];
+  evolves_to: ChainLinkDto[];
+}
+
+export interface EvolutionChainResponseDto {
+  id: number;
+  chain: ChainLinkDto;
 }

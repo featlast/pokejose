@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Animated,
   ScrollView,
@@ -8,7 +8,9 @@ import {
 } from 'react-native';
 import { useDependencies } from '../../../di/DependenciesContext';
 import { PokemonType } from '../../../domain/enums';
+import type { EvolutionNode } from '../../../domain/models';
 import {
+  FavoriteButton,
   Banner,
   ProgressiveImage,
   ScreenHeader,
@@ -27,6 +29,9 @@ import { TYPE_APPEARANCE, radius, spacing, useTheme } from '../../theme';
 import { formatName, formatPokedexNumber } from '../../utils/formatters';
 import { PokemonDetailContent } from './PokemonDetailContent';
 import { usePokemonDetailViewModel } from './usePokemonDetailViewModel';
+import { useFavorites } from '../../favorites/FavoritesContext';
+import { useEvolutionChain } from './useEvolutionChain';
+import { useTypeMatchups } from './useTypeMatchups';
 
 const MAX_CONTENT_WIDTH = 720;
 
@@ -38,8 +43,23 @@ export const PokemonDetailScreen = ({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { getPokemonDetail } = useDependencies();
+  const { getPokemonDetail, getTypeMatchups, getEvolutionChain } =
+    useDependencies();
   const { state, retry } = usePokemonDetailViewModel(getPokemonDetail, id);
+  const matchups = useTypeMatchups(getTypeMatchups, state.detail?.types);
+  const evolutionChain = useEvolutionChain(
+    getEvolutionChain,
+    state.detail?.speciesId,
+  );
+  const openEvolution = useCallback(
+    (node: EvolutionNode) =>
+      navigation.navigate('PokemonDetail', {
+        id: node.id,
+        name: node.name,
+        imageUrl: node.imageUrl,
+      }),
+    [navigation],
+  );
   // Same rule as the list: a cached detail (the usual case) never flashes a skeleton,
   // and a skeleton that does appear stays long enough not to blink.
   const showSkeleton = useMinimumDuration(state.status === ViewStatus.LOADING);
@@ -53,6 +73,11 @@ export const PokemonDetailScreen = ({
     ? TYPE_APPEARANCE[primaryType].color
     : colors.primary;
   const displayName = formatName(name);
+  const { isFavorite, toggle } = useFavorites();
+  const toggleThisFavorite = useCallback(
+    () => toggle({ id, name, imageUrl }),
+    [toggle, id, name, imageUrl],
+  );
   const artworkSize = Math.min(width * 0.55, 260);
 
   const renderBody = () => {
@@ -83,6 +108,9 @@ export const PokemonDetailScreen = ({
           <PokemonDetailContent
             detail={state.detail}
             accentColor={accentColor}
+            matchups={matchups}
+            evolutionChain={evolutionChain}
+            onSelectEvolution={openEvolution}
           />
         ) : null;
     }
@@ -95,6 +123,15 @@ export const PokemonDetailScreen = ({
         subtitle={formatPokedexNumber(id)}
         onBack={navigation.goBack}
         backgroundColor={accentColor}
+        trailing={
+          <FavoriteButton
+            testID="detail-favorite"
+            name={displayName}
+            active={isFavorite(id)}
+            onPress={toggleThisFavorite}
+            variant="header"
+          />
+        }
       />
       <ScrollView
         contentContainerStyle={[

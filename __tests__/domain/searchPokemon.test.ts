@@ -82,10 +82,20 @@ describe('SearchPokemonUseCase', () => {
     const types = {
       getTypeIndex: jest.fn().mockResolvedValue(resource(typeIndex)),
     };
+    const favorites = {
+      getFavorites: jest
+        .fn()
+        .mockResolvedValue([
+          makeSummary(172, 'pichu'),
+          makeSummary(122, 'mr-mime'),
+        ]),
+      saveFavorites: jest.fn(),
+    };
     return {
       searchIndex,
       types,
-      useCase: new SearchPokemonUseCase(searchIndex, types),
+      favorites,
+      useCase: new SearchPokemonUseCase(searchIndex, types, favorites),
     };
   };
 
@@ -105,16 +115,30 @@ describe('SearchPokemonUseCase', () => {
 
   it('lists every Pokémon of a type when there is no query', async () => {
     const { useCase } = createUseCase();
-    const results = await useCase.execute('', PokemonType.ELECTRIC);
+    const results = await useCase.execute('', { type: PokemonType.ELECTRIC });
     expect(results.map(p => p.id)).toEqual([25, 26, 172]);
   });
 
   it('combines the query with the type', async () => {
     const { useCase } = createUseCase();
-    const results = await useCase.execute('pi', PokemonType.ELECTRIC);
+    const results = await useCase.execute('pi', { type: PokemonType.ELECTRIC });
     expect(results.map(p => p.id)).toEqual([25, 172]);
     await expect(
-      useCase.execute('mime', PokemonType.ELECTRIC),
+      useCase.execute('mime', { type: PokemonType.ELECTRIC }),
     ).resolves.toEqual([]);
+  });
+
+  it('lists favorites in their own order and searches within them', async () => {
+    const { searchIndex, useCase } = createUseCase();
+    const all = await useCase.execute('', { favoritesOnly: true });
+    expect(all.map(p => p.id)).toEqual([172, 122]);
+    expect(searchIndex.getSearchIndex).not.toHaveBeenCalled();
+    const matches = await useCase.execute('pi', { favoritesOnly: true });
+    expect(matches.map(p => p.id)).toEqual([172]);
+    const electric = await useCase.execute('', {
+      favoritesOnly: true,
+      type: PokemonType.ELECTRIC,
+    });
+    expect(electric.map(p => p.id)).toEqual([172]);
   });
 });

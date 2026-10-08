@@ -21,6 +21,7 @@
 | FR-305 | Contador y vacío | El subtítulo dice "N Pokémon de tipo X" (o "N resultados de tipo X" si además hay búsqueda). Sin coincidencias: "No encontramos Pokémon de tipo X para “término”." |
 | FR-306 | Fila fija al colapsar | La fila se mueve con el header: al colapsar el título, queda fija bajo la búsqueda. Al filtrar, el header se colapsa como al buscar (FR-215) y la primera fila de resultados queda completa bajo la fila (FR-224) |
 | FR-307 | Tolerante a fallos | Si el índice de tipos todavía no está o falló, la fila no se muestra y la lista funciona como antes (FR-208) |
+| FR-309 | Header del color del tipo | *Enmienda (pedido del usuario):* con un tipo activo, el header y la franja de la barra de estado pasan del rojo al color de ese tipo con un fundido de ~280 ms, y vuelven al rojo al quitar el filtro. Con "Reducir movimiento" el cambio es inmediato |
 | FR-308 | Profundidad visual | Cada círculo tiene sombra difusa teñida con el color del tipo, sombra de contacto y brillo interior; el seleccionado tiene una sombra más amplia. Se encoge al presionarlo |
 
 ## Requisitos no funcionales

@@ -16,8 +16,10 @@ export const CACHE_CONFIG = {
    * Bump when the persisted shape or meaning of cached data changes.
    * v2: the type index now includes alternative forms (spec 002).
    * v3: list pages come from `pokemon-species` (1025 Pokémon, no forms).
+   * v4: the type index snapshot also carries the type chart (spec 004).
+   * v5: details carry their `speciesId` (spec 005).
    */
-  schemaVersion: 3,
+  schemaVersion: 5,
   listTtlMs: 24 * HOUR_MS,
   detailTtlMs: 7 * 24 * HOUR_MS,
   /** Type and name indexes change only when new games are released. */

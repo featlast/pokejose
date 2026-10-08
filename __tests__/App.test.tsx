@@ -4,17 +4,23 @@
  */
 
 import React from 'react';
-import { Animated, Appearance, BackHandler } from 'react-native';
+import { Animated, Appearance, BackHandler, StyleSheet } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import type { ReactTestInstance } from 'react-test-renderer';
 import App from '../App';
 import { AppError, ErrorCode } from '../src/core/errors';
 import { InMemoryKeyValueStorage } from '../src/core/storage/InMemoryKeyValueStorage';
 import { createAppDependencies } from '../src/di/container';
-import { DataOrigin, PokemonType } from '../src/domain/enums';
-import type { PokemonDetail, Resource } from '../src/domain/models';
+import { DataOrigin, EvolutionTrigger, PokemonType } from '../src/domain/enums';
+import type {
+  EvolutionChain,
+  PokemonDetail,
+  Resource,
+} from '../src/domain/models';
+import type { PokemonEvolutionRepository } from '../src/domain/repositories/PokemonEvolutionRepository.interface';
 import type { PokemonRepository } from '../src/domain/repositories/PokemonRepository.interface';
 import type { PokemonSearchIndexRepository } from '../src/domain/repositories/PokemonSearchIndexRepository.interface';
+import type { PokemonTypeChartRepository } from '../src/domain/repositories/PokemonTypeChartRepository.interface';
 import type { PokemonTypeIndexRepository } from '../src/domain/repositories/PokemonTypeIndexRepository.interface';
 import {
   bulbasaurDetail,
@@ -63,7 +69,66 @@ const createRepository = (
 type Fakes = {
   typeIndexRepository?: PokemonTypeIndexRepository;
   searchIndexRepository?: PokemonSearchIndexRepository;
+  typeChartRepository?: PokemonTypeChartRepository;
+  evolutionRepository?: PokemonEvolutionRepository;
   storage?: InMemoryKeyValueStorage;
+};
+
+const levelUp = (minLevel: number) => ({
+  trigger: EvolutionTrigger.LEVEL_UP,
+  minLevel,
+  item: null,
+  heldItem: null,
+  friendship: false,
+  timeOfDay: null,
+  knownMoveType: null,
+  gender: null,
+});
+
+/** Bulbasaur → Ivysaur (Nv. 16) → Venusaur (Nv. 32). */
+const bulbasaurChain: EvolutionChain = {
+  id: 1,
+  root: {
+    ...makeSummary(1, 'bulbasaur'),
+    condition: null,
+    evolvesTo: [
+      {
+        ...makeSummary(2, 'ivysaur'),
+        condition: levelUp(16),
+        evolvesTo: [
+          {
+            ...makeSummary(3, 'venusaur'),
+            condition: levelUp(32),
+            evolvesTo: [],
+          },
+        ],
+      },
+    ],
+  },
+};
+
+/** Defensive relations of Bulbasaur's types, as PokéAPI reports them. */
+const grassPoisonChart = {
+  [PokemonType.GRASS]: {
+    [PokemonType.FLYING]: 2,
+    [PokemonType.POISON]: 2,
+    [PokemonType.BUG]: 2,
+    [PokemonType.FIRE]: 2,
+    [PokemonType.ICE]: 2,
+    [PokemonType.GROUND]: 0.5,
+    [PokemonType.WATER]: 0.5,
+    [PokemonType.GRASS]: 0.5,
+    [PokemonType.ELECTRIC]: 0.5,
+  },
+  [PokemonType.POISON]: {
+    [PokemonType.GROUND]: 2,
+    [PokemonType.PSYCHIC]: 2,
+    [PokemonType.FIGHTING]: 0.5,
+    [PokemonType.POISON]: 0.5,
+    [PokemonType.BUG]: 0.5,
+    [PokemonType.GRASS]: 0.5,
+    [PokemonType.FAIRY]: 0.5,
+  },
 };
 
 /** Every repository is faked, so the test never reaches the network or disk. */
@@ -96,6 +161,16 @@ const renderApp = async (repository: PokemonRepository, fakes: Fakes = {}) => {
           repository,
           typeIndexRepository,
           searchIndexRepository,
+          evolutionRepository: fakes.evolutionRepository ?? {
+            getEvolutionChain: jest
+              .fn()
+              .mockResolvedValue(resource(bulbasaurChain)),
+          },
+          typeChartRepository: fakes.typeChartRepository ?? {
+            getTypeChart: jest
+              .fn()
+              .mockResolvedValue(resource(grassPoisonChart)),
+          },
           storage: fakes.storage ?? new InMemoryKeyValueStorage(),
         })}
       />,
@@ -118,6 +193,16 @@ const visibleText = (renderer: ReactTestRenderer.ReactTestRenderer): string =>
     .flatMap(node => node.children)
     .filter((child): child is string => typeof child === 'string')
     .join(' ');
+
+/** Resolved background colour of the collapsing header's bar (FR-309). */
+const headerBarColor = (renderer: ReactTestRenderer.ReactTestRenderer) => {
+  const [bar] = renderer.root.findAll(
+    (node: ReactTestInstance) =>
+      node.props.testID === 'collapsing-header-bar' &&
+      typeof node.type === 'string',
+  );
+  return String(StyleSheet.flatten(bar.props.style).backgroundColor);
+};
 
 /** Lets data promises and next-tick animations (see above) settle. */
 const settle = () => new Promise<void>(resolve => setTimeout(resolve, 10));
@@ -179,6 +264,75 @@ describe('App', () => {
 
     await press(byTestId(renderer, 'header-back')[0]);
     expect(byTestId(renderer, 'pokemon-detail-content')).toHaveLength(0);
+  });
+
+  it('shows weaknesses and resistances in the detail', async () => {
+    const renderer = (mounted = await renderApp(createRepository()));
+
+    await press(byTestId(renderer, 'pokemon-card-1')[0]);
+
+    expect(byTestId(renderer, 'type-matchups')).not.toHaveLength(0);
+    expect(byTestId(renderer, 'type-matchup-fire')).not.toHaveLength(0);
+    expect(
+      byTestId(renderer, 'type-matchup-grass')[0].props.accessibilityLabel,
+    ).toBe('Planta, un cuarto del daño');
+    // Bug is ×2 against Grass and ×½ against Poison: it cancels out.
+    expect(byTestId(renderer, 'type-matchup-bug')).toHaveLength(0);
+    expect(visibleText(renderer)).toContain('DÉBIL CONTRA');
+    expect(visibleText(renderer)).not.toContain('INMUNE A');
+  });
+
+  it('shows the evolution chain and opens another member', async () => {
+    const repository = createRepository();
+    const renderer = (mounted = await renderApp(repository));
+
+    await press(byTestId(renderer, 'pokemon-card-1')[0]);
+
+    expect(byTestId(renderer, 'evolution-chain')).not.toHaveLength(0);
+    expect(visibleText(renderer)).toContain('Nv. 16');
+    const current = byTestId(renderer, 'evolution-1')[0];
+    expect(current.props.accessibilityLabel).toBe(
+      'Bulbasaur, estás viendo este Pokémon',
+    );
+    expect(current.props.disabled).toBe(true);
+    const ivysaur = byTestId(renderer, 'evolution-2')[0];
+    expect(ivysaur.props.accessibilityLabel).toBe(
+      'Ivysaur, evoluciona de Bulbasaur al nivel 16',
+    );
+
+    await press(ivysaur);
+
+    expect(repository.getPokemonDetail).toHaveBeenLastCalledWith(2, undefined);
+  });
+
+  it('hides the evolution chain when it cannot load', async () => {
+    const renderer = (mounted = await renderApp(createRepository(), {
+      evolutionRepository: {
+        getEvolutionChain: jest
+          .fn()
+          .mockRejectedValue(new AppError(ErrorCode.NETWORK, 'offline')),
+      },
+    }));
+
+    await press(byTestId(renderer, 'pokemon-card-1')[0]);
+
+    expect(byTestId(renderer, 'pokemon-detail-content')).not.toHaveLength(0);
+    expect(byTestId(renderer, 'evolution-chain')).toHaveLength(0);
+  });
+
+  it('hides the matchups when the type chart is unavailable', async () => {
+    const renderer = (mounted = await renderApp(createRepository(), {
+      typeChartRepository: {
+        getTypeChart: jest
+          .fn()
+          .mockRejectedValue(new AppError(ErrorCode.NETWORK, 'offline')),
+      },
+    }));
+
+    await press(byTestId(renderer, 'pokemon-card-1')[0]);
+
+    expect(byTestId(renderer, 'pokemon-detail-content')).not.toHaveLength(0);
+    expect(byTestId(renderer, 'type-matchups')).toHaveLength(0);
   });
 
   it('shows a friendly error and retries', async () => {
@@ -364,6 +518,8 @@ describe('App', () => {
       expect(
         byTestId(renderer, 'type-filter-poison')[0].props.accessibilityState,
       ).toEqual({ selected: true });
+      // FR-309: the header takes Poison's colour (#8A3B8A)…
+      expect(headerBarColor(renderer)).toMatch(/138, 59, 138/);
 
       await press(byTestId(renderer, 'type-filter-poison')[0]);
 
@@ -372,6 +528,10 @@ describe('App', () => {
       expect(
         byTestId(renderer, 'type-filter-all')[0].props.accessibilityState,
       ).toEqual({ selected: true });
+      // …and goes back to the brand red (#DC0A2D) without a filter.
+      // Leaving the filter takes one more render before the fade starts.
+      await ReactTestRenderer.act(settle);
+      expect(headerBarColor(renderer)).toMatch(/220, 10, 45/);
     });
 
     it('combines the type with the search and keeps it when the search is cleared', async () => {
@@ -409,6 +569,80 @@ describe('App', () => {
 
       expect(byTestId(renderer, 'pokemon-list')).not.toHaveLength(0);
       expect(byTestId(renderer, 'type-filter-bar')).toHaveLength(0);
+    });
+  });
+
+  describe('favorites', () => {
+    /** The pressable that carries the button's state (the memo wrapper shares its testID). */
+    const favoriteButton = (
+      renderer: ReactTestRenderer.ReactTestRenderer,
+      id: string,
+    ) => {
+      const nodes = byTestId(renderer, id).filter(
+        node => node.props.accessibilityState && node.props.onPress,
+      );
+      // With a filter active, the results overlay is rendered last.
+      return nodes[nodes.length - 1];
+    };
+
+    it('saves from the card, filters, removes and undoes', async () => {
+      const storage = new InMemoryKeyValueStorage();
+      const renderer = (mounted = await renderApp(createRepository(), {
+        storage,
+      }));
+
+      await press(favoriteButton(renderer, 'favorite-1'));
+      await ReactTestRenderer.act(settle);
+
+      expect(visibleText(renderer)).toContain(
+        'Bulbasaur se guardó en favoritos',
+      );
+      expect(
+        favoriteButton(renderer, 'favorite-1').props.accessibilityState,
+      ).toEqual({ selected: true });
+      expect(await storage.getItem('pokedex:favorites')).toContain('bulbasaur');
+
+      await press(byTestId(renderer, 'type-filter-favorites')[0]);
+      await ReactTestRenderer.act(settle);
+
+      expect(byTestId(renderer, 'search-results')).not.toHaveLength(0);
+      expect(visibleText(renderer)).toContain('1 favorito');
+
+      await press(favoriteButton(renderer, 'favorite-1'));
+      await ReactTestRenderer.act(settle);
+
+      expect(byTestId(renderer, 'favorites-empty')).not.toHaveLength(0);
+      expect(visibleText(renderer)).toContain('Aún no tienes favoritos');
+      expect(visibleText(renderer)).toContain(
+        'Se quitó Bulbasaur de favoritos',
+      );
+
+      await press(byTestId(renderer, 'snackbar-action')[0]);
+      await ReactTestRenderer.act(settle);
+
+      expect(byTestId(renderer, 'favorites-empty')).toHaveLength(0);
+      expect(byTestId(renderer, 'search-results')).not.toHaveLength(0);
+    });
+
+    it('toggles from the detail header and the list follows', async () => {
+      const renderer = (mounted = await renderApp(createRepository()));
+
+      await press(byTestId(renderer, 'pokemon-card-1')[0]);
+      const header = favoriteButton(renderer, 'detail-favorite');
+      expect(header.props.accessibilityLabel).toBe(
+        'Agregar Bulbasaur a favoritos',
+      );
+
+      await press(header);
+      await ReactTestRenderer.act(settle);
+      expect(
+        favoriteButton(renderer, 'detail-favorite').props.accessibilityLabel,
+      ).toBe('Quitar Bulbasaur de favoritos');
+
+      await press(byTestId(renderer, 'header-back')[0]);
+      expect(
+        favoriteButton(renderer, 'favorite-1').props.accessibilityState,
+      ).toEqual({ selected: true });
     });
   });
 

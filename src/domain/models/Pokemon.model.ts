@@ -18,6 +18,8 @@ export interface PokemonStat {
 }
 
 export interface PokemonDetail extends PokemonSummary {
+  /** Species it belongs to: equals `id` except for alternative forms (#10001+). */
+  speciesId: number;
   types: PokemonType[];
   abilities: PokemonAbility[];
   stats: PokemonStat[];

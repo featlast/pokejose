@@ -1,4 +1,6 @@
 import {
+  favoritesSubtitle,
+  noFavoritesMessage,
   noResultsMessage,
   resultsSubtitle,
 } from '../../src/presentation/screens/PokemonList/searchMessages';
@@ -41,6 +43,21 @@ describe('resultsSubtitle', () => {
     expect(resultsSubtitle(12, '', 'Fuego')).toBe('12 Pokémon de tipo Fuego');
     expect(resultsSubtitle(2, 'char', 'Fuego')).toBe(
       '2 resultados de tipo Fuego',
+    );
+  });
+});
+
+describe('favorites messages', () => {
+  it('counts favorites and search results within them', () => {
+    expect(favoritesSubtitle(1, '')).toBe('1 favorito');
+    expect(favoritesSubtitle(3, '')).toBe('3 favoritos');
+    expect(favoritesSubtitle(2, 'char')).toBe('2 resultados en favoritos');
+  });
+
+  it('explains how to add the first favorite, or the missing match', () => {
+    expect(noFavoritesMessage('')).toContain('Toca el corazón');
+    expect(noFavoritesMessage('zzz')).toBe(
+      'No encontramos favoritos para “zzz”.',
     );
   });
 });

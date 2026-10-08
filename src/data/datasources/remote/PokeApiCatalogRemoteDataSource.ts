@@ -7,7 +7,10 @@ import type {
   TypeResponseDto,
 } from '../../dto/PokeApi.dto';
 import { mapNamedResourceToSummary } from '../../mappers/pokemon.mapper';
-import { mapTypeResponsesToIndex } from '../../mappers/typeIndex.mapper';
+import {
+  mapTypeResponsesToChart,
+  mapTypeResponsesToIndex,
+} from '../../mappers/typeIndex.mapper';
 import type { TypeIndexSnapshot } from '../TypeIndexSnapshot.types';
 import type { SearchIndexRemoteDataSource } from './SearchIndexRemoteDataSource.interface';
 import type { TypeIndexRemoteDataSource } from './TypeIndexRemoteDataSource.interface';
@@ -28,7 +31,10 @@ export class PokeApiCatalogRemoteDataSource
     private readonly options: CatalogOptions,
   ) {}
 
-  /** One small request per type, in parallel (~21 KB each) instead of one detail per Pokémon. */
+  /**
+   * One small request per type, in parallel (~21 KB each) instead of one detail per
+   * Pokémon. The same responses give the type chart (spec 004).
+   */
   async fetchTypeIndex(): Promise<TypeIndexSnapshot> {
     const results = await Promise.allSettled(
       INDEXED_TYPES.map(type => this.http.get<TypeResponseDto>(`type/${type}`)),
@@ -52,6 +58,7 @@ export class PokeApiCatalogRemoteDataSource
 
     return {
       index: mapTypeResponsesToIndex(responses),
+      chart: mapTypeResponsesToChart(responses),
       isComplete: responses.length === INDEXED_TYPES.length,
     };
   }

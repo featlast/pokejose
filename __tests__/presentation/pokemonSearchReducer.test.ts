@@ -7,11 +7,11 @@ import {
 } from '../../src/presentation/screens/PokemonList/pokemonSearchReducer';
 import { makeSummary } from '../fixtures/pokemon.fixtures';
 
-const start = (term: string, typeFilter: PokemonType | null = null) =>
+const start = (term: string, filter: PokemonType | null = null) =>
   pokemonSearchReducer(initialPokemonSearchState, {
     type: 'SEARCH_START',
     term,
-    typeFilter,
+    filter,
   });
 
 describe('pokemonSearchReducer', () => {
@@ -19,7 +19,7 @@ describe('pokemonSearchReducer', () => {
     const results = pokemonSearchReducer(start('pika'), {
       type: 'SEARCH_SUCCESS',
       term: 'pika',
-      typeFilter: null,
+      filter: null,
       results: [makeSummary(25, 'pikachu')],
     });
     expect(results.status).toBe(SearchStatus.RESULTS);
@@ -27,7 +27,7 @@ describe('pokemonSearchReducer', () => {
     const none = pokemonSearchReducer(start('zzz'), {
       type: 'SEARCH_SUCCESS',
       term: 'zzz',
-      typeFilter: null,
+      filter: null,
       results: [],
     });
     expect(none.status).toBe(SearchStatus.NO_RESULTS);
@@ -37,7 +37,7 @@ describe('pokemonSearchReducer', () => {
     const state = pokemonSearchReducer(start('pikac'), {
       type: 'SEARCH_SUCCESS',
       term: 'pika',
-      typeFilter: null,
+      filter: null,
       results: [makeSummary(25)],
     });
     expect(state.status).toBe(SearchStatus.SEARCHING);
@@ -48,7 +48,7 @@ describe('pokemonSearchReducer', () => {
     const state = pokemonSearchReducer(start('', PokemonType.WATER), {
       type: 'SEARCH_SUCCESS',
       term: '',
-      typeFilter: PokemonType.FIRE,
+      filter: PokemonType.FIRE,
       results: [makeSummary(4)],
     });
     expect(state.status).toBe(SearchStatus.SEARCHING);
@@ -57,12 +57,12 @@ describe('pokemonSearchReducer', () => {
     const current = pokemonSearchReducer(state, {
       type: 'SEARCH_SUCCESS',
       term: '',
-      typeFilter: PokemonType.WATER,
+      filter: PokemonType.WATER,
       results: [makeSummary(7)],
     });
     expect(current).toMatchObject({
       status: SearchStatus.RESULTS,
-      typeFilter: PokemonType.WATER,
+      filter: PokemonType.WATER,
     });
   });
 
@@ -71,7 +71,7 @@ describe('pokemonSearchReducer', () => {
     const failed = pokemonSearchReducer(start('pika'), {
       type: 'SEARCH_FAILURE',
       term: 'pika',
-      typeFilter: null,
+      filter: null,
       error,
     });
     expect(failed).toMatchObject({ status: SearchStatus.ERROR, error });

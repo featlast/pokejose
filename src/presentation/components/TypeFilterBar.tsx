@@ -1,14 +1,19 @@
 import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { PokemonType } from '../../domain/enums';
+import { CollectionFilter } from '../enums/CollectionFilter.enum';
 import { useSafeAreaInsets } from '../hooks/SafeArea';
 import { spacing, useTheme } from '../theme';
 import { TYPE_FILTER_CHIP_SLOT, TypeFilterChip } from './TypeFilterChip';
 
+type FilterValue = PokemonType | CollectionFilter | null;
+
 type TypeFilterBarProps = {
-  /** Active type, or `null` when "Todos" is selected. */
-  selected: PokemonType | null;
-  onChange: (type: PokemonType | null) => void;
+  /** Active type or favorites, or `null` when "Todos" is selected. */
+  selected: FilterValue;
+  onChange: (value: FilterValue) => void;
+  /** Shown over the Favoritos chip (FR-606). */
+  favoritesCount: number;
 };
 
 /** The 18 playable types: Astral and Desconocido have no Pokémon in the list (FR-301). */
@@ -28,15 +33,19 @@ export const TYPE_FILTER_ROW_HEIGHT =
   TOP_PADDING + TYPE_FILTER_CHIP_SLOT + 2 + LABEL_HEIGHT + BOTTOM_PADDING;
 
 /**
- * Horizontal row of circular type filters (FR-301). Tapping the active type
- * or "Todos" removes the filter (FR-302).
+ * Horizontal row of circular filters: Todos, Favoritos (FR-606) and the types
+ * (FR-301). Tapping the active one or "Todos" removes the filter (FR-302).
  */
-export const TypeFilterBar = ({ selected, onChange }: TypeFilterBarProps) => {
+export const TypeFilterBar = ({
+  selected,
+  onChange,
+  favoritesCount,
+}: TypeFilterBarProps) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   const onPress = useCallback(
-    (type: PokemonType | null) => onChange(type === selected ? null : type),
+    (value: FilterValue) => onChange(value === selected ? null : value),
     [onChange, selected],
   );
 
@@ -61,6 +70,13 @@ export const TypeFilterBar = ({ selected, onChange }: TypeFilterBarProps) => {
         selected={selected === null}
         dimmed={false}
         onPress={onPress}
+      />
+      <TypeFilterChip
+        type={CollectionFilter.FAVORITES}
+        selected={selected === CollectionFilter.FAVORITES}
+        dimmed={selected !== null && selected !== CollectionFilter.FAVORITES}
+        onPress={onPress}
+        badge={favoritesCount}
       />
       {FILTERABLE_TYPES.map(type => (
         <TypeFilterChip

@@ -78,6 +78,14 @@ const renderApp = async () => {
           searchIndexRepository: {
             getSearchIndex: jest.fn().mockResolvedValue(resource([])),
           },
+          typeChartRepository: {
+            getTypeChart: jest.fn().mockResolvedValue(resource({})),
+          },
+          evolutionRepository: {
+            getEvolutionChain: jest
+              .fn()
+              .mockRejectedValue(new Error('not needed here')),
+          },
           storage: new InMemoryKeyValueStorage(),
         })}
       />,

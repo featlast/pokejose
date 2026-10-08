@@ -34,3 +34,8 @@
   (`#RRGGBBAA`), contacto negra y `inset` para el brillo. Igual en Android e iOS.
 - **Íconos:** 18 PNG blancos sobre transparente (@1x/@2x/@3x) dibujados como SVG y rasterizados con
   Chrome headless; la Pokéball de **Todos** va a color. Viven en `src/presentation/assets/types`.
+
+### ADR-23 · Color del header en JS, no en el driver nativo
+- El driver nativo de `Animated` no anima colores en todas las versiones, así que el fundido del header
+  (FR-309) corre en JS con `useNativeDriver: false`, sobre una vista distinta de la que se traslada en el
+  driver nativo (no se pueden mezclar en el mismo nodo). Es un fundido corto y ocasional, no un efecto por frame.

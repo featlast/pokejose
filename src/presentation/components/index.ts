@@ -15,6 +15,7 @@ export {
   HEADER_ICON_SIZE,
   HEADER_ICON_SLOT,
 } from './CollapsingHeader';
+export { FavoriteButton } from './FavoriteButton';
 export { PokemonCard } from './PokemonCard';
 export { PokemonCardSkeleton } from './PokemonCardSkeleton';
 export { ProgressiveImage } from './ProgressiveImage';
@@ -22,6 +23,7 @@ export { ScreenHeader } from './ScreenHeader';
 export { ScrollToTopButton } from './ScrollToTopButton';
 export { SearchBar } from './SearchBar';
 export { Skeleton } from './Skeleton';
+export { Snackbar } from './Snackbar';
 export { StatBar } from './StatBar';
 export { StateMessage } from './StateMessage';
 export { ThemeToggle } from './ThemeToggle';
@@ -31,4 +33,5 @@ export {
   TYPE_FILTER_ROW_HEIGHT,
   TypeFilterBar,
 } from './TypeFilterBar';
+export { TypeMatchupChip } from './TypeMatchupChip';
 export { TypeRibbon } from './TypeRibbon';

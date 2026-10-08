@@ -1,6 +1,6 @@
 import { PokemonType } from '../../domain/enums';
-import type { PokemonTypeIndex } from '../../domain/models';
-import type { TypeResponseDto } from '../dto/PokeApi.dto';
+import type { PokemonTypeIndex, TypeChart } from '../../domain/models';
+import type { NamedApiResourceDto, TypeResponseDto } from '../dto/PokeApi.dto';
 import { extractIdFromUrl, toPokemonType } from './pokemon.mapper';
 
 /**
@@ -31,4 +31,40 @@ export const mapTypeResponsesToIndex = (
     index[Number(id)] = types.filter(Boolean);
   });
   return index;
+};
+
+/**
+ * Defensive damage relations of each type (`chart[defender][attacker]`), from the
+ * same `/type/{name}` responses as the index. Types missing from `responses`
+ * (failed requests) are missing from the chart too.
+ */
+export const mapTypeResponsesToChart = (
+  responses: readonly TypeResponseDto[],
+): TypeChart => {
+  const chart: Partial<
+    Record<PokemonType, Partial<Record<PokemonType, number>>>
+  > = {};
+  responses.forEach(response => {
+    const defender = toPokemonType(response.name);
+    if (defender === PokemonType.UNKNOWN) {
+      return;
+    }
+    const relations = response.damage_relations;
+    const multipliers: Partial<Record<PokemonType, number>> = {};
+    const add = (
+      attackers: NamedApiResourceDto[] | undefined,
+      multiplier: number,
+    ) =>
+      (attackers ?? []).forEach(attacker => {
+        const type = toPokemonType(attacker.name);
+        if (type !== PokemonType.UNKNOWN) {
+          multipliers[type] = multiplier;
+        }
+      });
+    add(relations?.double_damage_from, 2);
+    add(relations?.half_damage_from, 0.5);
+    add(relations?.no_damage_from, 0);
+    chart[defender] = multipliers;
+  });
+  return chart;
 };

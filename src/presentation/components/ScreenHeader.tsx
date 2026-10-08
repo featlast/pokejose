@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from '../hooks/SafeArea';
 import { spacing, useTheme } from '../theme';
@@ -15,6 +16,8 @@ type ScreenHeaderProps = {
   onBack?: () => void;
   /** Overrides the default primary background, e.g. with the Pokémon type color. */
   backgroundColor?: string;
+  /** Right-hand action, e.g. the favorite button (FR-603). */
+  trailing?: ReactNode;
 };
 
 export const ScreenHeader = ({
@@ -22,6 +25,7 @@ export const ScreenHeader = ({
   subtitle,
   onBack,
   backgroundColor,
+  trailing,
 }: ScreenHeaderProps) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -66,6 +70,7 @@ export const ScreenHeader = ({
           </AppText>
         ) : null}
       </View>
+      {trailing}
     </View>
   );
 };

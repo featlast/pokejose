@@ -71,6 +71,7 @@ export const mapDetailResponseToDetail = (
 
   return {
     id: dto.id,
+    speciesId: dto.species?.url ? extractIdFromUrl(dto.species.url) : dto.id,
     name: dto.name,
     imageUrl: artwork,
     types: [...(dto.types ?? [])]

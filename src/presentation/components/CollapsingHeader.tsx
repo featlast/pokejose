@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { Animated, Image, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from '../hooks/SafeArea';
+import { useColorTransition } from '../hooks/useColorTransition';
 import { AppText } from './AppText';
 import { TITLE_BLOCK_HEIGHT } from '../hooks/useCollapsingHeader';
 import { radius, spacing, useTheme } from '../theme';
@@ -25,6 +26,8 @@ type CollapsingHeaderProps = {
    */
   belowSearch?: ReactNode;
   belowSearchHeight?: number;
+  /** Colour of the bar and status bar; fades when it changes (FR-309). Defaults to `primary`. */
+  barColor?: string;
 };
 
 export const HEADER_ICON_SIZE = 36;
@@ -52,8 +55,10 @@ export const CollapsingHeader = ({
   bottomAccessory,
   belowSearch,
   belowSearchHeight = 0,
+  barColor,
 }: CollapsingHeaderProps) => {
   const { colors } = useTheme();
+  const animatedBarColor = useColorTransition(barColor ?? colors.primary);
   const insets = useSafeAreaInsets();
 
   // Memoized: rebuilding these nodes would re-attach them to the native driver on every render.
@@ -113,11 +118,12 @@ export const CollapsingHeader = ({
           { height: expandedHeight, transform: [{ translateY }] },
         ]}
       >
-        <View
+        <Animated.View
+          testID="collapsing-header-bar"
           style={[
             styles.bar,
             {
-              backgroundColor: colors.primary,
+              backgroundColor: animatedBarColor,
               paddingTop: insets.top + spacing.sm,
             },
             horizontal,
@@ -160,7 +166,7 @@ export const CollapsingHeader = ({
             {renderSearch(progress)}
             {trailing}
           </View>
-        </View>
+        </Animated.View>
         {belowSearch ? (
           <View style={{ height: belowSearchHeight }}>{belowSearch}</View>
         ) : null}
@@ -174,11 +180,11 @@ export const CollapsingHeader = ({
         ) : null}
       </Animated.View>
       {/* Masks the title as it slides under the status bar. */}
-      <View
+      <Animated.View
         pointerEvents="none"
         style={[
           styles.statusBarScrim,
-          { height: insets.top, backgroundColor: colors.primary },
+          { height: insets.top, backgroundColor: animatedBarColor },
         ]}
       />
     </>

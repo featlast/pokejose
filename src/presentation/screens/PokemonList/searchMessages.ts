@@ -37,3 +37,17 @@ export const resultsSubtitle = (
     ? `${count} resultados de tipo ${typeLabel}`
     : `${count} Pokémon de tipo ${typeLabel}`;
 };
+
+/** Header subtitle for the favorites filter (FR-606). */
+export const favoritesSubtitle = (count: number, term: string): string => {
+  if (term) {
+    return `${count} resultados en favoritos`;
+  }
+  return count === 1 ? '1 favorito' : `${count} favoritos`;
+};
+
+/** Empty favorites: how to add the first one, or no match for the term (FR-607). */
+export const noFavoritesMessage = (term: string): string =>
+  term
+    ? `No encontramos favoritos para “${term}”.`
+    : 'Toca el corazón de cualquier Pokémon para guardarlo aquí. Se quedan guardados aunque no tengas conexión.';

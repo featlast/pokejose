@@ -1,19 +1,39 @@
 import React, { memo, useCallback, useEffect, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, View } from 'react-native';
 import type { PokemonType } from '../../domain/enums';
+import { favoriteIcons } from '../assets/favorites';
 import { allTypesIcon, typeIcons } from '../assets/types';
+import { CollectionFilter } from '../enums/CollectionFilter.enum';
 import { useReduceMotion } from '../hooks/useReduceMotion';
-import { TYPE_APPEARANCE, fontFamily, useTheme } from '../theme';
+import { TYPE_APPEARANCE, fontFamily, radius, useTheme } from '../theme';
 import { AppText } from './AppText';
 
+type ChipValue = PokemonType | CollectionFilter | null;
+
 type TypeFilterChipProps = {
-  /** `null` is the "Todos" chip, which removes the filter. */
-  type: PokemonType | null;
+  /** `null` is "Todos" (no filter); `FAVORITES` is the favorites chip (FR-606). */
+  type: ChipValue;
   selected: boolean;
   /** Another chip is selected: this one steps back (FR-303). */
   dimmed: boolean;
-  onPress: (type: PokemonType | null) => void;
+  onPress: (type: ChipValue) => void;
+  /** Small count over the circle (number of favorites). */
+  badge?: number;
 };
+
+/** Label, icon and colour of the chips that are not a type. */
+const COLLECTION_CHIPS = {
+  all: {
+    label: 'Todos',
+    a11y: 'Mostrar todos los tipos',
+    icon: allTypesIcon,
+  },
+  [CollectionFilter.FAVORITES]: {
+    label: 'Favoritos',
+    a11y: 'Mostrar solo favoritos',
+    icon: favoriteIcons.ball,
+  },
+} as const;
 
 const DOT_SIZE = 56;
 const ICON_SIZE = 26;
@@ -43,11 +63,18 @@ const TypeFilterChipComponent = ({
   selected,
   dimmed,
   onPress,
+  badge,
 }: TypeFilterChipProps) => {
   const { colors, isDark } = useTheme();
   const reduceMotion = useReduceMotion();
-  const appearance = type ? TYPE_APPEARANCE[type] : null;
-  const label = appearance?.label ?? 'Todos';
+  const collection =
+    type === CollectionFilter.FAVORITES
+      ? COLLECTION_CHIPS[CollectionFilter.FAVORITES]
+      : type === null
+      ? COLLECTION_CHIPS.all
+      : null;
+  const appearance = collection ? null : TYPE_APPEARANCE[type as PokemonType];
+  const label = appearance?.label ?? collection?.label ?? '';
   const ringColor = appearance?.color ?? colors.primary;
 
   const selection = useRef(new Animated.Value(selected ? 1 : 0)).current;
@@ -88,7 +115,9 @@ const TypeFilterChipComponent = ({
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={
-        type ? `Filtrar por tipo ${label}` : 'Mostrar todos los tipos'
+        collection
+          ? `${collection.a11y}${badge ? `, ${badge}` : ''}`
+          : `Filtrar por tipo ${label}`
       }
       style={({ pressed }) => [
         styles.chip,
@@ -135,12 +164,35 @@ const TypeFilterChipComponent = ({
           ]}
         >
           <Image
-            source={type ? typeIcons[type] : allTypesIcon}
-            style={type ? styles.icon : styles.allIcon}
+            source={
+              collection ? collection.icon : typeIcons[type as PokemonType]
+            }
+            style={collection ? styles.allIcon : styles.icon}
             fadeDuration={0}
             accessibilityIgnoresInvertColors
           />
         </View>
+        {badge ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.badge,
+              {
+                backgroundColor: colors.primary,
+                borderColor: colors.background,
+              },
+            ]}
+          >
+            <AppText
+              variant="caption"
+              color="#FFFFFF"
+              maxFontSizeMultiplier={1}
+              style={styles.badgeText}
+            >
+              {badge > 99 ? '99+' : badge}
+            </AppText>
+          </View>
+        ) : null}
       </Animated.View>
       <AppText
         variant="caption"
@@ -181,6 +233,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   icon: { width: ICON_SIZE, height: ICON_SIZE },
+  badge: {
+    position: 'absolute',
+    top: 2,
+    right: 0,
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 5,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { fontSize: 11, fontFamily: fontFamily.display },
   allIcon: { width: ALL_ICON_SIZE, height: ALL_ICON_SIZE },
   // Intro has a single weight per family: "bold" is the display family.
   selectedLabel: { fontFamily: fontFamily.display },

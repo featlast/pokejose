@@ -33,7 +33,9 @@ import {
   TypeFilterBar,
 } from '../../components';
 import { POKEMON_CARD_HEIGHT_RATIO } from '../../components/PokemonCard';
+import { CollectionFilter } from '../../enums/CollectionFilter.enum';
 import { SearchStatus } from '../../enums/SearchStatus.enum';
+import { useFavorites } from '../../favorites/FavoritesContext';
 import { ViewStatus } from '../../enums/ViewStatus.enum';
 import { useSafeAreaInsets } from '../../hooks/SafeArea';
 import {
@@ -60,7 +62,12 @@ import {
 import { usePokemonListViewModel } from './usePokemonListViewModel';
 import { usePokemonSearch } from './usePokemonSearch';
 import { usePokemonTypeIndex } from './usePokemonTypeIndex';
-import { noResultsMessage, resultsSubtitle } from './searchMessages';
+import {
+  favoritesSubtitle,
+  noFavoritesMessage,
+  noResultsMessage,
+  resultsSubtitle,
+} from './searchMessages';
 
 const isIOS = Platform.OS === 'ios';
 const keyExtractor = (item: PokemonSummary) => String(item.id);
@@ -91,6 +98,7 @@ const PokemonGrid = ({
   listRef,
   ...listProps
 }: GridProps) => {
+  const { isFavorite, toggle } = useFavorites();
   const renderItem = useCallback<ListRenderItem<PokemonSummary>>(
     ({ item }) => (
       <PokemonCard
@@ -98,9 +106,11 @@ const PokemonGrid = ({
         width={itemWidth}
         onPress={onPressItem}
         primaryType={primaryTypeOf(typeIndex, item.id)}
+        isFavorite={isFavorite(item.id)}
+        onToggleFavorite={toggle}
       />
     ),
-    [itemWidth, onPressItem, typeIndex],
+    [itemWidth, onPressItem, typeIndex, isFavorite, toggle],
   );
 
   return (
@@ -139,7 +149,8 @@ export const PokemonListScreen = ({
     setRefreshCount(count => count + 1);
     refresh();
   }, [refresh]);
-  const search = usePokemonSearch(searchPokemon);
+  const { favorites } = useFavorites();
+  const search = usePokemonSearch(searchPokemon, favorites);
   const { columns, itemWidth } = useGridLayout();
   // FR-307: without the type index there is nothing to filter, so no row.
   const showTypeFilters = typeIndex !== null;
@@ -197,7 +208,7 @@ export const PokemonListScreen = ({
   const { listRef: searchListRef } = searchTop;
   useEffect(() => {
     searchListRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [search.typeFilter, searchListRef]);
+  }, [search.filter, searchListRef]);
 
   // A new column count remounts the grid at its top; the header must follow.
   const { reset: resetPagedScroll } = pagedScroll;
@@ -269,16 +280,21 @@ export const PokemonListScreen = ({
     [contentStyleFor, searchScroll.contentPaddingTop],
   );
 
-  const resultsTypeLabel = search.state.typeFilter
-    ? TYPE_APPEARANCE[search.state.typeFilter].label
-    : undefined;
+  const resultsFilter = search.state.filter;
+  const resultsAreFavorites = resultsFilter === CollectionFilter.FAVORITES;
+  const resultsTypeLabel =
+    resultsFilter && !resultsAreFavorites
+      ? TYPE_APPEARANCE[resultsFilter].label
+      : undefined;
   const subtitle = isSearching
     ? search.state.status === SearchStatus.RESULTS
-      ? resultsSubtitle(
-          search.state.results.length,
-          search.state.term,
-          resultsTypeLabel,
-        )
+      ? resultsAreFavorites
+        ? favoritesSubtitle(search.state.results.length, search.state.term)
+        : resultsSubtitle(
+            search.state.results.length,
+            search.state.term,
+            resultsTypeLabel,
+          )
       : undefined
     : state.totalCount > 0
     ? `${state.items.length} de ${state.totalCount} Pokémon`
@@ -417,6 +433,16 @@ export const PokemonListScreen = ({
         collapsedHeight,
       );
     }
+    if (status === SearchStatus.NO_RESULTS && resultsAreFavorites) {
+      return underHeader(
+        <StateMessage
+          testID="favorites-empty"
+          title={term ? 'Sin resultados' : 'Aún no tienes favoritos'}
+          message={noFavoritesMessage(term)}
+        />,
+        collapsedHeight,
+      );
+    }
     if (status === SearchStatus.NO_RESULTS) {
       return underHeader(
         <StateMessage
@@ -511,12 +537,19 @@ export const PokemonListScreen = ({
         belowSearch={
           showTypeFilters ? (
             <TypeFilterBar
-              selected={search.typeFilter}
-              onChange={search.setTypeFilter}
+              selected={search.filter}
+              onChange={search.setFilter}
+              favoritesCount={favorites.length}
             />
           ) : undefined
         }
         belowSearchHeight={TYPE_FILTER_ROW_HEIGHT}
+        // FR-309: the bar takes the colour of the active type.
+        barColor={
+          search.typeFilter
+            ? TYPE_APPEARANCE[search.typeFilter].color
+            : colors.primary
+        }
         renderSearch={progress => (
           <SearchBar
             value={search.query}

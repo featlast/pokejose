@@ -10,3 +10,4 @@
 - [x] T5 `CollapsingHeader` con slot `belowSearch` y alto extra en el layout (FR-306, ADR-16)
 - [x] T6 Pantalla: subtítulo, mensaje vacío, fila oculta sin índice + prueba de integración (FR-305, FR-307)
 - [x] T7 Compuertas + verificación en Pixel 10 Pro
+- [x] T8 Enmienda FR-309: `useColorTransition` y `barColor` en `CollapsingHeader` + prueba de integración

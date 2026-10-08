@@ -5,6 +5,7 @@ import { createAppDependencies } from './src/di/container';
 import { DependenciesProvider } from './src/di/DependenciesContext';
 import { AnimatedSplash } from './src/presentation/components';
 import { SafeAreaProvider } from './src/presentation/hooks/SafeArea';
+import { FavoritesProvider } from './src/presentation/favorites/FavoritesContext';
 import { ReduceMotionProvider } from './src/presentation/hooks/useReduceMotion';
 import { ThemeProvider } from './src/presentation/theme';
 import { StackNavigator } from './src/presentation/navigation';
@@ -31,11 +32,13 @@ const App = ({ dependencies, showSplash = true }: AppProps) => {
           <ThemeProvider>
             {/* Headers are always a saturated color, so light status bar content fits both themes. */}
             <StatusBar barStyle="light-content" />
-            <StackNavigator
-              screens={screens}
-              initialRouteName="PokemonList"
-              sharedElements={sharedElements}
-            />
+            <FavoritesProvider>
+              <StackNavigator
+                screens={screens}
+                initialRouteName="PokemonList"
+                sharedElements={sharedElements}
+              />
+            </FavoritesProvider>
             {/* Drawn over the navigator so the first page loads while it plays. */}
             {splashVisible && <AnimatedSplash onFinish={hideSplash} />}
           </ThemeProvider>

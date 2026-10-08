@@ -1,5 +1,6 @@
 import type { PokemonType } from '../enums';
 import type { PokemonSummary, PokemonTypeIndex } from '../models';
+import type { FavoritesRepository } from '../repositories/FavoritesRepository.interface';
 import type { PokemonSearchIndexRepository } from '../repositories/PokemonSearchIndexRepository.interface';
 import type { PokemonTypeIndexRepository } from '../repositories/PokemonTypeIndexRepository.interface';
 
@@ -64,26 +65,36 @@ export const filterByType = (
 ): PokemonSummary[] =>
   index.filter(pokemon => typeIndex[pokemon.id]?.includes(type) ?? false);
 
+/** Narrows a search; with no text, a filter alone lists everything it matches. */
+export type SearchFilter = {
+  type?: PokemonType | null;
+  /** Only favorites, in their own order (most recent first) (ADR-26). */
+  favoritesOnly?: boolean;
+};
+
 /**
- * Search by text, by type or both. A type alone lists every Pokémon of that
- * type; a text alone searches the whole index; neither returns nothing.
+ * Search by text, by filter or both. A filter alone lists everything it
+ * matches; a text alone searches the whole index; neither returns nothing.
  */
 export class SearchPokemonUseCase {
   constructor(
     private readonly searchIndex: PokemonSearchIndexRepository,
     private readonly typeIndex: PokemonTypeIndexRepository,
+    private readonly favorites: FavoritesRepository,
   ) {}
 
   async execute(
     query: string,
-    type: PokemonType | null = null,
+    { type = null, favoritesOnly = false }: SearchFilter = {},
   ): Promise<PokemonSummary[]> {
     const hasQuery = query.trim().length > 0;
-    if (!hasQuery && !type) {
+    if (!hasQuery && !type && !favoritesOnly) {
       return [];
     }
-    const [{ data: index }, typeIndex] = await Promise.all([
-      this.searchIndex.getSearchIndex(),
+    const [index, typeIndex] = await Promise.all([
+      favoritesOnly
+        ? this.favorites.getFavorites()
+        : this.searchIndex.getSearchIndex().then(({ data }) => data),
       type ? this.typeIndex.getTypeIndex() : Promise.resolve(null),
     ]);
     const candidates =

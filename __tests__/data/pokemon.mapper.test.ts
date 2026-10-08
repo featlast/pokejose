@@ -64,6 +64,7 @@ describe('pokemon.mapper', () => {
 
       expect(detail).toEqual({
         id: 1,
+        speciesId: 1,
         name: 'bulbasaur',
         imageUrl: 'artwork.png',
         types: [PokemonType.GRASS, PokemonType.POISON],
@@ -94,6 +95,18 @@ describe('pokemon.mapper', () => {
       expect(detail.types).toEqual([PokemonType.UNKNOWN]);
       expect(detail.stats).toEqual([]);
       expect(detail.baseExperience).toBeNull();
+    });
+
+    it('reads the species of an alternative form', () => {
+      const detail = mapDetailResponseToDetail({
+        ...detailResponseDto,
+        id: 10034,
+        species: {
+          name: 'charizard',
+          url: 'https://pokeapi.co/api/v2/pokemon-species/6/',
+        },
+      });
+      expect(detail.speciesId).toBe(6);
     });
   });
 });

@@ -65,6 +65,7 @@ export const makePage = (
 
 export const bulbasaurDetail: PokemonDetail = {
   id: 1,
+  speciesId: 1,
   name: 'bulbasaur',
   imageUrl: 'artwork.png',
   types: [PokemonType.GRASS, PokemonType.POISON],
